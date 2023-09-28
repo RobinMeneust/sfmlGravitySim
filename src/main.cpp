@@ -1,97 +1,8 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
-
-class GravitySource {
-private:
-    sf::Vector2f pos;
-    float strength;
-    sf::CircleShape shape;
-
-public:
-    GravitySource(float posX, float posY, float strength) {
-        pos.x = posX;
-        pos.y = posY;
-        this->strength = strength;
-
-        shape.setPosition(pos);
-        shape.setFillColor(sf::Color::White);
-        shape.setRadius(15);
-    }
-
-    void render(sf::RenderWindow& window) {
-        window.draw(shape);
-    }
-
-
-    sf::Vector2f getPos() {
-        return pos;
-    }
-
-    float getStrength() {
-        return strength;
-    }
-};
-
-class Particle {
-private:
-    sf::Vector2f pos;
-    sf::Vector2f velocity;
-    sf::CircleShape shape;
-    //sf::Rect<float> boundingBox;
-
-public:
-    Particle(float posX, float posY, float velX, float velY/*, sf::Rect<float> boundingBox*/) {
-        pos.x = posX;
-        pos.y = posY;
-        velocity.x = velX;
-        velocity.y = velY;
-
-        /*this->boundingBox = boundingBox;*/
-
-        shape.setPosition(pos);
-        shape.setFillColor(sf::Color::White);
-        shape.setRadius(3);
-    }
-
-    void render(sf::RenderWindow& window) {
-        shape.setPosition(pos);
-        window.draw(shape);
-    }
-
-    void updatePhysics(GravitySource& src) {
-        sf::Vector2f distanceVect = src.getPos() - this->pos;
-        float squareDistance = distanceVect.x * distanceVect.x + distanceVect.y * distanceVect.y;
-        float distance = sqrt(squareDistance);
-        
-        //normalize acceleration vector & deduce acceleration vector
-        sf::Vector2f normalizedDistance = distanceVect / distance;
-
-        float forceDivMass = src.getStrength() / squareDistance;
-        sf::Vector2f accelerationVect;
-
-        accelerationVect.x = normalizedDistance.x * forceDivMass;
-        accelerationVect.y = normalizedDistance.y * forceDivMass;
-
-        velocity += accelerationVect;
-
-       /* sf::Vector2f tmpPos = pos + velocity;
-
-        if (tmpPos.x < boundingBox.left || tmpPos.x > boundingBox.left + boundingBox.width) {
-            velocity.x = -velocity.x;
-        }
-        if (tmpPos.y < boundingBox.top || tmpPos.y > boundingBox.top + boundingBox.height) {
-            velocity.y = -velocity.y;
-        }
-        */
-        pos += velocity;
-    }
-
-    void setColor(sf::Color col) {
-        shape.setFillColor(col);
-    }
-};
-
+#include "GravitySource.h"
+#include "Particle.h"
 
 sf::Color mapValToColor(float value) {
     if (value < 0.0f) {
@@ -131,21 +42,22 @@ int main()
     std::vector<GravitySource> sources;
 
     sources.push_back(GravitySource(500, 500, 7000));
-    sources.push_back(GravitySource(1200, 500, 7000));
+    // sources.push_back(GravitySource(1200, 500, 3000));
 
-    int nbParticles = 1000;
+    int nbParticles = 100;
 
     std::vector<Particle> particles;
 
-    //sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x, windowRes.y));
+    sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x-1, windowRes.y-1));
 
     for (int i = 0; i < nbParticles; i++) {
-        particles.push_back(Particle(600, 700, 4, 0.2 + (0.1 / nbParticles) * i/*, windowBoundingBox*/));
+        // particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
+        particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i));
 
         float val = (float)i / (float)nbParticles;
-       sf::Color col = mapValToColor(val);
+        sf::Color col = mapValToColor(val);
 
-       particles[i].setColor(col);
+        particles[i].setColor(col);
     }
 
 
@@ -159,9 +71,17 @@ int main()
         window.clear();
         for (int i = 0; i < particles.size(); i++) {
             for (int j = 0; j < sources.size(); j++) {
-                particles[i].updatePhysics(sources[j]);
+                particles[i].updateAcceleration(sources[j]);
             }
+            
+            particles[i].updatePhysics();
             particles[i].render(window);
+
+            for (int j = 0; j < particles.size(); j++) {
+                if(particles[i].isColliding(particles[j])) {
+                    particles[i].collisionVelocityUpdate(particles[j]);
+                }
+            }
         }
         for (int i = 0; i < sources.size(); i++) {
             sources[i].render(window);

@@ -2,3 +2,5 @@ build/
 CMakeFiles/
 out/
 _deps/
+.vscode/
+.vs/
