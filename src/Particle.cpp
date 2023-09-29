@@ -46,33 +46,35 @@ void Particle::updateAcceleration(GravitySource& src) {
 }
 
 void Particle::updatePhysics() {
-    sf::Vector2f tmpPos = pos + velocity;
     if(boundingBox.width != 0 && boundingBox.height !=0) {
-        if (tmpPos.x < boundingBox.left || tmpPos.x + radius > boundingBox.left + boundingBox.width) {
+        sf::Vector2f tmpPos = pos + velocity;
+        if (tmpPos.x - radius < boundingBox.left || tmpPos.x + radius > boundingBox.left + boundingBox.width) {
             velocity.x = -velocity.x;
         }
-        if (tmpPos.y < boundingBox.top || tmpPos.y + radius > boundingBox.top + boundingBox.height) {
+        if (tmpPos.y - radius < boundingBox.top || tmpPos.y + radius > boundingBox.top + boundingBox.height) {
             velocity.y = -velocity.y;
         }
     }
-
     pos += velocity;
 }
 
-bool Particle::isColliding(Particle p2) {
+bool Particle::areColliding(Particle p2) {
     float dx = pos.x-p2.pos.x;
     float dy = pos.y-p2.pos.y;
     float dist = std::sqrt(dx * dx + dy * dy) - radius - p2.radius;
-    return dist >=-0.1 && dist <= 0.0;
+    return dist <= 0.0 && dist > -0.3;
+    //TODO: find a different method to manage collisions
 }
 
-void Particle::collisionVelocityUpdate(Particle p2) {
-    float invMassSum = 1/(mass + p2.mass);
-    float dOrientation = dotProduct(velocity - p2.velocity, pos - p2.pos) / ((pos.x-p2.pos.x)*(pos.x-p2.pos.x) + (pos.y-p2.pos.y)*(pos.y-p2.pos.y));
+void Particle::collisionUpdate(Particle p2) {
+    if(areColliding(p2)) {
+        float invMassSum = 1/(mass + p2.mass);
+        float dOrientation = dotProduct(velocity - p2.velocity, pos - p2.pos) / ((pos.x-p2.pos.x)*(pos.x-p2.pos.x) + (pos.y-p2.pos.y)*(pos.y-p2.pos.y));
 
-    // <-u1,-u2> = <u1,u2>
-    velocity -= 2*p2.mass * invMassSum * dOrientation * (pos - p2.pos);
-    p2.velocity -= 2*mass * invMassSum * dOrientation * (p2.pos - pos);
+        // <-u1,-u2> = <u1,u2>
+        velocity -= 2*p2.mass * invMassSum * dOrientation * (pos - p2.pos);
+        p2.velocity -= 2*mass * invMassSum * dOrientation * (p2.pos - pos);
+    }
 }
 
 void Particle::setColor(sf::Color col) {

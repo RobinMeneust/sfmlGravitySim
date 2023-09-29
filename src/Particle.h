@@ -21,8 +21,8 @@ public:
     sf::Vector2f getPos();
     void updateAcceleration(GravitySource& src);
     void updatePhysics();
-    bool isColliding(Particle p2);
-    void collisionVelocityUpdate(Particle p2);
+    bool areColliding(Particle p2);
+    void collisionUpdate(Particle p2);
     void setColor(sf::Color col);
     float dotProduct(sf::Vector2f u1, sf::Vector2f u2);
 };

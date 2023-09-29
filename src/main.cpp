@@ -12,21 +12,21 @@ sf::Color mapValToColor(float value) {
         value = 1;
     }
 
-    int r = 0, g = 0, b = 0;
+    int r = 50, g = 50, b = 20;
 
     if (value < 0.25f) {
-        r = 255 * (value*4);
+        r = 50 + 205 * (value*4);
     }
     else if (value < 0.25f) {
-        r = 255 * (0.5f - value) * 4;
-        b = 255 * ((value-0.25f) * 4);
+        r = 50 + 205 * (0.5f - value) * 4;
+        b = 50 + 205 * ((value-0.25f) * 4);
     }
     else if (value < 0.5f) {
-        b = 255 * (0.75f - value) * 4;
-        g = 255 * ((value - 0.5f) * 4);
+        b = 50 + 205 * (0.75f - value) * 4;
+        g = 50 + 205 * ((value - 0.5f) * 4);
     }
     else {
-        g = 255 * (1.0f - value) * 4;
+        g = 50 + 205 * (1.0f - value) * 4;
     }
 
     return sf::Color(r, g, b);
@@ -41,18 +41,18 @@ int main()
 
     std::vector<GravitySource> sources;
 
-    // sources.push_back(GravitySource(500, 500, 7000));
-    // sources.push_back(GravitySource(1200, 500, 3000));
+    sources.push_back(GravitySource(500, 500, 3000));
+    sources.push_back(GravitySource(1200, 500, 3000));
 
-    int nbParticles = 10;
+    int nbParticles = 100;
 
     std::vector<Particle> particles;
 
     sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x, windowRes.y));
 
     for (int i = 0; i < nbParticles; i++) {
-        particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
-        // particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i));
+        // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
+        particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i));
 
         float val = (float)i / (float)nbParticles;
         sf::Color col = mapValToColor(val);
@@ -69,20 +69,22 @@ int main()
         }
 
         window.clear();
+        
         for (int i = 0; i < particles.size(); i++) {
             for (int j = 0; j < sources.size(); j++) {
                 particles[i].updateAcceleration(sources[j]);
             }
             
             particles[i].updatePhysics();
-            particles[i].render(window);
 
             for (int j = 0; j < particles.size(); j++) {
-                if(particles[i].isColliding(particles[j])) {
-                    particles[i].collisionVelocityUpdate(particles[j]);
+                if(i!=j) {
+                    particles[i].collisionUpdate(particles[j]);
                 }
             }
+            particles[i].render(window);
         }
+
         for (int i = 0; i < sources.size(); i++) {
             sources[i].render(window);
         }
