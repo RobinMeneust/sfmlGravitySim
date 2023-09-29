@@ -8,10 +8,10 @@
 class Particle {
 private:
     sf::Vector2f pos;
-    sf::Vector2f velocity;
+    sf::Vector2f velocity; // m.s-1
     sf::CircleShape shape;
-    float mass;
-    float radius;
+    float mass; // kg
+    float radius; // m
     sf::Rect<float> boundingBox;
 
 public:
@@ -24,6 +24,7 @@ public:
     bool isColliding(Particle p2);
     void collisionVelocityUpdate(Particle p2);
     void setColor(sf::Color col);
+    float dotProduct(sf::Vector2f u1, sf::Vector2f u2);
 };
 
 #endif

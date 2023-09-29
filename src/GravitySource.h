@@ -9,6 +9,7 @@ private:
     sf::Vector2f pos;
     float strength;
     sf::CircleShape shape;
+    float radius;
 
 public:
     GravitySource(float posX, float posY, float strength);

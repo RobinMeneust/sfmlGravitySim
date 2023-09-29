@@ -3,11 +3,13 @@
 GravitySource::GravitySource(float posX, float posY, float strength) {
     pos.x = posX;
     pos.y = posY;
+    radius = 15;
     this->strength = strength;
 
     shape.setPosition(pos);
+    shape.setOrigin(radius,radius);
     shape.setFillColor(sf::Color::White);
-    shape.setRadius(15);
+    shape.setRadius(radius);
 }
 
 void GravitySource::render(sf::RenderWindow& window) {

@@ -35,24 +35,24 @@ sf::Color mapValToColor(float value) {
 
 int main()
 {
-    sf::Vector2i windowRes(1600, 1000);
+    sf::Vector2i windowRes(1600, 800);
     sf::RenderWindow window(sf::VideoMode(windowRes.x, windowRes.y), "My Program");
     window.setFramerateLimit(60);
 
     std::vector<GravitySource> sources;
 
-    sources.push_back(GravitySource(500, 500, 7000));
+    // sources.push_back(GravitySource(500, 500, 7000));
     // sources.push_back(GravitySource(1200, 500, 3000));
 
-    int nbParticles = 100;
+    int nbParticles = 10;
 
     std::vector<Particle> particles;
 
-    sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x-1, windowRes.y-1));
+    sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x, windowRes.y));
 
     for (int i = 0; i < nbParticles; i++) {
-        // particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
-        particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i));
+        particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
+        // particles.push_back(Particle(600+10*i, 700+10*i, 2, 0.2 + (0.1 / nbParticles) * i));
 
         float val = (float)i / (float)nbParticles;
         sf::Color col = mapValToColor(val);
