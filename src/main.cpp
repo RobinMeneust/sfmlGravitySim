@@ -75,13 +75,13 @@ int main()
                 particles[i].updateAcceleration(sources[j]);
             }
             
-            particles[i].updatePhysics();
-
             for (int j = 0; j < particles.size(); j++) {
                 if(i!=j) {
                     particles[i].collisionUpdate(particles[j]);
                 }
             }
+            
+            particles[i].updatePhysics();
             particles[i].render(window);
         }
 

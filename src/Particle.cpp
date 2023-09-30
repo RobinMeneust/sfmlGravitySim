@@ -1,5 +1,4 @@
 #include "Particle.h"
-#include <windows.h>
 
 Particle::Particle(float posX, float posY, float velX, float velY, sf::Rect<float> boundingBox) {
     pos.x = posX;
@@ -73,51 +72,48 @@ float Particle::distance(float r1, float r2, sf::Vector2f pos1, sf::Vector2f pos
     return dist;
 }
 
-void Particle::findRoot2D(std::function<float(sf::Vector2f pos1, sf::Vector2f pos2)> f, sf::Vector2f root[2], sf::Vector2f input1, sf::Vector2f input2, sf::Vector2f stepVect1, sf::Vector2f stepVect2) {
-    int iter = 0;
-	float step = 0.1;
-	sf::Vector2f bestApprox[2] = {input1, input2};
-    float eps;
-	float epsMin = INFINITY;
-    float prevEps = fabs(f(input1,input2));
-    float prevF;
+void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *collisionPointP2, sf::Vector2f prevPos1, sf::Vector2f prevPos2, sf::Vector2f pos1, sf::Vector2f pos2, float r1, float r2) {
+    float cx1 = prevPos1.x - prevPos2.x;
+    float cy1 = prevPos1.x - prevPos2.x;
+    
+    float cx2 = pos1.x - prevPos1.x - (pos2.x - prevPos2.x);
+    float cy2 = pos1.y - prevPos1.y - (pos2.y - prevPos2.y);
 
-    // std::cout << "INPUTS: (1:) " << input1.x << " " << input1.y << " (2:) " << input2.x << " " << input2.y << std::endl;
-    // std::cout << "STEPS: (1:) " << stepVect1.x << " " << stepVect1.y << " (2:) " << stepVect2.x << " " << stepVect2.y << std::endl;
+    float a = cx2*cx2 + cy2*cy2;
+    float b = 2*(cx1*cx2 + cy1*cy2);
+    float c = cy1*cy1 + cx1*cx1 - (r1+r2)*(r1+r2);
 
-    sf::Vector2f x1 = input1;
-    sf::Vector2f x2 = input2;
+    float delta = b*b - 4*a*c;
+    float t1 = -1;
+    float t2 = -1;
+    float t = -1;
 
-    /*
-    g'(u) = lim_{h->0}((g(u+h) - g(u))/h)
-    Here:
-    h = step
-    g(u+h) = eps
-    g(u) = prevEps
+    if(delta >= 0) {
+        t1 = (-b-sqrt(delta))/(2*a);
+        t2 = (-b+sqrt(delta))/(2*a);
+    }
 
-    We will use Euler's method
-    */
+    std::cout << "PREV: p1: " << prevPos1.x << " " << prevPos1.y << " p2: " << prevPos2.x << " " << prevPos2.y << std::endl;
+    std::cout << "NEXT: p1: " << pos1.x << " " << pos1.y << " p2: " << pos2.x << " " << pos2.y << std::endl;
+    std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
+    std::cout << "b^2: " << b*b << " 4ac: " << 4*a*c << std::endl;
+    std::cout << "delta" << delta << std::endl;
 
-    do{
-        prevF = fabs(f(x1,x2));
-        x1 += stepVect1*step*prevF;
-        x2 += stepVect2*step*prevF;
-        // std::cout << "X: (1:) " << x1.x << " " << x1.y << " (2:) " << x2.x << " " << x2.y << std::endl;
-
-        eps = fabs(f(x1,x2));
-        if(eps < epsMin){
-            epsMin = eps;
-            bestApprox[0] = x1;
-            bestApprox[0] = x2;
+    if(t1 >=0 && t1 <=1) {
+        if(t1 < t2 || t2<0 || t2>1) {
+            t = t1;
+        } else {
+            t = t2;
         }
+    } else if(t2 >=0 && t2 <=1) {
+        t = t2;
+    } else {
+        std::cerr << "Root could not be found" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
-        iter++;
-        std::cout << "eps: " << eps << std::endl;
-    }while(eps>0.1 && iter<100);
-    root[0] = bestApprox[0];
-    root[1] = bestApprox[1];
-    // std::cout << "ROOTS: (x:) " << root[0].x << " " << root[0].y << " (y:) " << root[1].x << " " << root[1].y << std::endl;
-    // std::cout << "___" << std::endl << "____" << std::endl;
+    *collisionPointP1 = prevPos1 + t*(pos1 - prevPos1);
+    *collisionPointP2 = prevPos2 + t*(pos2 - prevPos2);
 }
 
 void Particle::collisionUpdate(Particle p2) {
@@ -125,12 +121,12 @@ void Particle::collisionUpdate(Particle p2) {
     if(dist <= 0.0) {
         if(dist < 0.1) {
             // It's overlapping so we fix the positions
-            sf::Vector2f root[2];
-            
-            auto f = std::bind(distance, this->radius, p2.radius, std::placeholders::_1, std::placeholders::_2);
-            findRoot2D(f, root,pos,p2.pos,-velocity,-p2.velocity);
-            pos = root[0];
-            p2.pos = root[1];
+            sf::Vector2f collisionPointP1;
+            sf::Vector2f collisionPointP2;
+        
+            findCollisionPoint(&collisionPointP1, &collisionPointP2, pos, p2.pos, pos + velocity, p2.pos + p2.velocity, radius, p2.radius);
+            pos = collisionPointP1;
+            p2.pos = collisionPointP2;
         }
         float invMassSum = 1/(mass + p2.mass);
         float dOrientation = dotProduct(velocity - p2.velocity, pos - p2.pos) / ((pos.x-p2.pos.x)*(pos.x-p2.pos.x) + (pos.y-p2.pos.y)*(pos.y-p2.pos.y));
