@@ -41,18 +41,18 @@ int main()
 
     std::vector<GravitySource> sources;
 
-    sources.push_back(GravitySource(500, 500, 3000));
-    sources.push_back(GravitySource(1200, 500, 3000));
+    // sources.push_back(GravitySource(500, 500, 3000));
+    // sources.push_back(GravitySource(1200, 500, 3000));
 
-    int nbParticles = 100;
+    int nbParticles = 10;
 
     std::vector<Particle> particles;
 
     sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x, windowRes.y));
 
     for (int i = 0; i < nbParticles; i++) {
-        // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
-        particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i));
+        particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), -0.3, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
+        // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i));
 
         float val = (float)i / (float)nbParticles;
         sf::Color col = mapValToColor(val);

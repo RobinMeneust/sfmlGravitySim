@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include "GravitySource.h"
 #include <iostream>
+#include <functional>
 
 class Particle {
 private:
@@ -21,7 +22,9 @@ public:
     sf::Vector2f getPos();
     void updateAcceleration(GravitySource& src);
     void updatePhysics();
-    bool areColliding(Particle p2);
+    float distanceTo(Particle p2);
+    static float distance(float r1, float r2, sf::Vector2f pos1, sf::Vector2f pos2);
+    void findRoot2D(std::function<float(sf::Vector2f pos1, sf::Vector2f pos2)> f, sf::Vector2f root[2], sf::Vector2f input1, sf::Vector2f input2, sf::Vector2f stepVect1, sf::Vector2f stepVect2);
     void collisionUpdate(Particle p2);
     void setColor(sf::Color col);
     float dotProduct(sf::Vector2f u1, sf::Vector2f u2);
