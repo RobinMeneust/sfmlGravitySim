@@ -74,7 +74,7 @@ float Particle::distance(float r1, float r2, sf::Vector2f pos1, sf::Vector2f pos
 
 void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *collisionPointP2, sf::Vector2f prevPos1, sf::Vector2f prevPos2, sf::Vector2f pos1, sf::Vector2f pos2, float r1, float r2) {
     float cx1 = prevPos1.x - prevPos2.x;
-    float cy1 = prevPos1.x - prevPos2.x;
+    float cy1 = prevPos1.y - prevPos2.y;
     
     float cx2 = pos1.x - prevPos1.x - (pos2.x - prevPos2.x);
     float cy2 = pos1.y - prevPos1.y - (pos2.y - prevPos2.y);
@@ -97,7 +97,8 @@ void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *
     std::cout << "NEXT: p1: " << pos1.x << " " << pos1.y << " p2: " << pos2.x << " " << pos2.y << std::endl;
     std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
     std::cout << "b^2: " << b*b << " 4ac: " << 4*a*c << std::endl;
-    std::cout << "delta" << delta << std::endl;
+    std::cout << "delta: " << delta << std::endl;
+    std::cout << "t1: " << t1 << " t2: " << t2 << std::endl;
 
     if(t1 >=0 && t1 <=1) {
         if(t1 < t2 || t2<0 || t2>1) {
@@ -109,7 +110,7 @@ void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *
         t = t2;
     } else {
         std::cerr << "Root could not be found" << std::endl;
-        exit(EXIT_FAILURE);
+        // exit(EXIT_FAILURE);
     }
 
     *collisionPointP1 = prevPos1 + t*(pos1 - prevPos1);
@@ -117,17 +118,18 @@ void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *
 }
 
 void Particle::collisionUpdate(Particle p2) {
-    float dist = distanceTo(p2);
+    sf::Vector2f nextPosP1 = pos + velocity;
+    sf::Vector2f nextPosP2 = p2.pos + p2.velocity;
+    float dist = distance(radius, p2.radius, nextPosP1, nextPosP2);
     if(dist <= 0.0) {
-        if(dist < 0.1) {
-            // It's overlapping so we fix the positions
-            sf::Vector2f collisionPointP1;
-            sf::Vector2f collisionPointP2;
-        
-            findCollisionPoint(&collisionPointP1, &collisionPointP2, pos, p2.pos, pos + velocity, p2.pos + p2.velocity, radius, p2.radius);
-            pos = collisionPointP1;
-            p2.pos = collisionPointP2;
-        }
+        // collision (and eventually overlap)
+        sf::Vector2f collisionPointP1;
+        sf::Vector2f collisionPointP2;
+    
+        findCollisionPoint(&collisionPointP1, &collisionPointP2, pos, p2.pos, nextPosP1, nextPosP2, radius, p2.radius);
+        pos = collisionPointP1;
+        p2.pos = collisionPointP2;
+
         float invMassSum = 1/(mass + p2.mass);
         float dOrientation = dotProduct(velocity - p2.velocity, pos - p2.pos) / ((pos.x-p2.pos.x)*(pos.x-p2.pos.x) + (pos.y-p2.pos.y)*(pos.y-p2.pos.y));
 
