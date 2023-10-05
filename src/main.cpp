@@ -51,8 +51,8 @@ int main()
     sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x, windowRes.y));
 
     for (int i = 0; i < nbParticles; i++) {
-        particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), -0.3, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox));
-        // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i));
+        particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), -0.3, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox, std::to_string(i)));
+        // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i), std::to_string(i));
 
         float val = (float)i / (float)nbParticles;
         sf::Color col = mapValToColor(val);
@@ -62,6 +62,7 @@ int main()
 
 
     while (window.isOpen()) {
+        std::cout << "________________step________________" <<std::endl;
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) window.close();
@@ -70,24 +71,54 @@ int main()
 
         window.clear();
         
+        // Update acceleration vectors
         for (int i = 0; i < particles.size(); i++) {
             for (int j = 0; j < sources.size(); j++) {
                 particles[i].updateAcceleration(sources[j]);
             }
-            
-            for (int j = 0; j < particles.size(); j++) {
-                if(i!=j) {
-                    particles[i].collisionUpdate(particles[j]);
+        }
+
+        // Check if there are collisions a particle and a border
+        for (int i = 0; i < particles.size(); i++) {
+            float collisionTime = particles[i].bordersCollisionUpdate();
+            if(collisionTime != -1.0f) {
+                // There is a collision
+                for (int k = 0; k < particles.size(); k++) {
+                    if(k != i) {
+                        particles[i].turnBackTime(collisionTime);
+                    }
                 }
             }
-            
+        }
+
+        // Check if there are collisions between two particles
+        for (int i = 0; i < particles.size(); i++) {
+            for (int j = 0; j < particles.size(); j++) {
+                if(i!=j) {
+                    float collisionTime = particles[i].collisionUpdate(particles[j]);
+                    if(collisionTime != -1.0f) {
+                        // There is a collision
+                        for (int k = 0; k < particles.size(); k++) {
+                            if(k != i && k != j) {
+                                particles[i].turnBackTime(collisionTime);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update positions and render the particles
+        for (int i = 0; i < particles.size(); i++) {
             particles[i].updatePhysics();
             particles[i].render(window);
         }
 
+        // Render the gravity sources
         for (int i = 0; i < sources.size(); i++) {
             sources[i].render(window);
         }
+
         window.display();
     }
     return 0;

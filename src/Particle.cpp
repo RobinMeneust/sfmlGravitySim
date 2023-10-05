@@ -1,6 +1,6 @@
 #include "Particle.h"
 
-Particle::Particle(float posX, float posY, float velX, float velY, sf::Rect<float> boundingBox) {
+Particle::Particle(float posX, float posY, float velX, float velY, sf::Rect<float> boundingBox, std::string name) {
     pos.x = posX;
     pos.y = posY;
     velocity.x = velX;
@@ -10,17 +10,37 @@ Particle::Particle(float posX, float posY, float velX, float velY, sf::Rect<floa
 
     this->boundingBox = boundingBox;
 
+    this->name = name;
+    sf::Font font;
+    std::cout << "test1" << std::endl;
+    
+    //TO DO: use a relative path
+    font.loadFromFile("G:\\Prog\\SFML\\sfmlGravitySim\\fonts\\calibri.ttf");
+    nameTextBox.setFont(font);
+    nameTextBox.setString(name);
+    nameTextBox.setCharacterSize(10);
+    nameTextBox.setFillColor(sf::Color::Black);
+    nameTextBox.setOutlineColor(sf::Color::White);
+    nameTextBox.setPosition(pos);
+    
     shape.setPosition(pos);
     shape.setOrigin(radius,radius);
     shape.setFillColor(sf::Color::White);
     shape.setRadius(radius);
 }
 
-Particle::Particle(float posX, float posY, float velX, float velY) : Particle::Particle(posX, posY, velX, velY, sf::FloatRect(0,0,0,0)) {}
+Particle::Particle(float posX, float posY, float velX, float velY, sf::Rect<float> boundingBox) : Particle::Particle(posX, posY, velX, velY, boundingBox, "") {}
+
+Particle::Particle(float posX, float posY, float velX, float velY, std::string name) : Particle::Particle(posX, posY, velX, velY, sf::FloatRect(0,0,0,0), name) {}
+
+Particle::Particle(float posX, float posY, float velX, float velY) : Particle::Particle(posX, posY, velX, velY, "") {}
 
 void Particle::render(sf::RenderWindow& window) {
     shape.setPosition(pos);
+    nameTextBox.setPosition(pos);
+
     window.draw(shape);
+    // window.draw(nameTextBox);
 }
 
 sf::Vector2f Particle::getPos() {
@@ -46,16 +66,95 @@ void Particle::updateAcceleration(GravitySource& src) {
 }
 
 void Particle::updatePhysics() {
+    pos += velocity;
+}
+
+float Particle::findBorderCollisionTime(sf::Vector2f prevPos, sf::Vector2f pos, float radius, bool isHorizontal, float coord) {
+    float c1;
+    float c2;
+    if(isHorizontal) {
+        c1 = pos.y - prevPos.y;
+        c2 = prevPos.y - coord;
+    } else {
+        c1 = pos.x - prevPos.x;
+        c2 = prevPos.x - coord;
+    }
+
+    float a = c1*c1;
+    float b = 2*c1*c2;
+    float c = c2*c2 - radius*radius;
+
+    float delta = b*b - 4*a*c;
+    float t1 = -1;
+    float t2 = -1;
+    float t = -1;
+
+
+    //TODO: put the following code in a function to avoid repetition
+    if(a == 0) {
+        // if b == 0 and c is too large then there is no collision
+        if(b == 0 && c<0.001f) {
+            t1 = 0;
+        } else {
+            t1 = -c/b;
+        }
+    } else if(delta >= 0) {
+        t1 = (-b-sqrt(delta))/(2*a);
+        t2 = (-b+sqrt(delta))/(2*a);
+    }
+
+    std::cout << "PREV: p: " << prevPos.x << " " << prevPos.y << std::endl;
+    std::cout << "NEXT: p: " << pos.x << " " << pos.y << std::endl;
+    std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
+    std::cout << "b^2: " << b*b << " 4ac: " << 4*a*c << std::endl;
+    std::cout << "delta: " << delta << std::endl;
+    std::cout << "t1: " << t1 << " t2: " << t2 << std::endl;
+
+    if(t1 >=0 && t1 <=1) {
+        if(t1 < t2 || t2<0 || t2>1) {
+            t = t1;
+        } else {
+            t = t2;
+        }
+    } else if(t2 >=0 && t2 <=1) {
+        t = t2;
+    } else {
+        std::cerr << "(border collision) Root could not be found" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    return t;
+}
+
+float Particle::bordersCollisionUpdate() {
+    float collisionTime = -1.0f;
     if(boundingBox.width != 0 && boundingBox.height !=0) {
-        sf::Vector2f tmpPos = pos + velocity;
-        if (tmpPos.x - radius < boundingBox.left || tmpPos.x + radius > boundingBox.left + boundingBox.width) {
+        // If there is a bounding box
+        sf::Vector2f nextStepPos = pos + velocity;
+
+        if (nextStepPos.x - radius <= boundingBox.left) {
+            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.left);
+            turnBackTime(collisionTime);
+            velocity.x = -velocity.x;
+        }        
+        if(nextStepPos.x + radius >= boundingBox.left + boundingBox.width) {
+            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.left + boundingBox.width);
+            turnBackTime(collisionTime);
             velocity.x = -velocity.x;
         }
-        if (tmpPos.y - radius < boundingBox.top || tmpPos.y + radius > boundingBox.top + boundingBox.height) {
+        if (nextStepPos.y - radius <= boundingBox.top) {
+            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.top);
+            turnBackTime(collisionTime);
             velocity.y = -velocity.y;
         }
+        if (nextStepPos.y + radius >= boundingBox.top + boundingBox.height) {
+            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.top + boundingBox.height);
+            turnBackTime(collisionTime);
+            velocity.y = -velocity.y;
+        }
+
     }
-    pos += velocity;
+    return collisionTime;
 }
 
 float Particle::distanceTo(Particle p2) {
@@ -72,7 +171,7 @@ float Particle::distance(float r1, float r2, sf::Vector2f pos1, sf::Vector2f pos
     return dist;
 }
 
-void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *collisionPointP2, sf::Vector2f prevPos1, sf::Vector2f prevPos2, sf::Vector2f pos1, sf::Vector2f pos2, float r1, float r2) {
+float Particle::findCollisionTime(sf::Vector2f prevPos1, sf::Vector2f prevPos2, sf::Vector2f pos1, sf::Vector2f pos2, float r1, float r2) {
     float cx1 = prevPos1.x - prevPos2.x;
     float cy1 = prevPos1.y - prevPos2.y;
     
@@ -88,7 +187,14 @@ void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *
     float t2 = -1;
     float t = -1;
 
-    if(delta >= 0) {
+    if(a == 0) {
+        // if b == 0 and c is too large then there is no collision
+        if(b == 0 && c<0.001f) {
+            t1 = 0;
+        } else {
+            t1 = -c/b;
+        }
+    } else if(delta >= 0) {
         t1 = (-b-sqrt(delta))/(2*a);
         t2 = (-b+sqrt(delta))/(2*a);
     }
@@ -109,26 +215,24 @@ void Particle::findCollisionPoint(sf::Vector2f *collisionPointP1, sf::Vector2f *
     } else if(t2 >=0 && t2 <=1) {
         t = t2;
     } else {
-        std::cerr << "Root could not be found" << std::endl;
-        // exit(EXIT_FAILURE);
+        std::cerr << "(2 particles collision) Root could not be found" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
-    *collisionPointP1 = prevPos1 + t*(pos1 - prevPos1);
-    *collisionPointP2 = prevPos2 + t*(pos2 - prevPos2);
+    return t;
 }
 
-void Particle::collisionUpdate(Particle p2) {
+float Particle::collisionUpdate(Particle p2) {
     sf::Vector2f nextPosP1 = pos + velocity;
     sf::Vector2f nextPosP2 = p2.pos + p2.velocity;
     float dist = distance(radius, p2.radius, nextPosP1, nextPosP2);
-    if(dist <= 0.0) {
-        // collision (and eventually overlap)
-        sf::Vector2f collisionPointP1;
-        sf::Vector2f collisionPointP2;
-    
-        findCollisionPoint(&collisionPointP1, &collisionPointP2, pos, p2.pos, nextPosP1, nextPosP2, radius, p2.radius);
-        pos = collisionPointP1;
-        p2.pos = collisionPointP2;
+    float collisionTime = -1.0f;
+
+    if(dist <= 0.001) {
+        // collision (and eventually overlap)    
+        collisionTime = findCollisionTime(pos, p2.pos, nextPosP1, nextPosP2, radius, p2.radius);
+        this->turnBackTime(collisionTime);
+        p2.turnBackTime(collisionTime);
 
         float invMassSum = 1/(mass + p2.mass);
         float dOrientation = dotProduct(velocity - p2.velocity, pos - p2.pos) / ((pos.x-p2.pos.x)*(pos.x-p2.pos.x) + (pos.y-p2.pos.y)*(pos.y-p2.pos.y));
@@ -137,6 +241,14 @@ void Particle::collisionUpdate(Particle p2) {
         velocity -= 2*p2.mass * invMassSum * dOrientation * (pos - p2.pos);
         p2.velocity -= 2*mass * invMassSum * dOrientation * (p2.pos - pos);
     }
+
+    return collisionTime;
+}
+
+void Particle::turnBackTime(float time) {
+    std::cout << "turn back time "<< time << std::endl;
+    sf::Vector2f nextStepPos = pos + velocity;
+    pos = pos + time*(nextStepPos - pos);
 }
 
 void Particle::setColor(sf::Color col) {
@@ -145,4 +257,8 @@ void Particle::setColor(sf::Color col) {
 
 float Particle::dotProduct(sf::Vector2f u1, sf::Vector2f u2) {
     return u1.x * u2.x + u1.y + u2.y;
+}
+
+std::string Particle::getName() {
+    return name;
 }
