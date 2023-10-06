@@ -16,6 +16,7 @@ private:
     float radius; // m
     sf::Rect<float> boundingBox;
     std::string name;
+    sf::Font font;
     sf::Text nameTextBox;
 
 public:
@@ -32,7 +33,7 @@ public:
     float distanceTo(Particle p2);
     static float distance(float r1, float r2, sf::Vector2f pos1, sf::Vector2f pos2);
     float findCollisionTime(sf::Vector2f prevPos1, sf::Vector2f prevPos2, sf::Vector2f pos1, sf::Vector2f pos2, float r1, float r2);
-    float collisionUpdate(Particle p2);
+    float collisionUpdate(Particle *p2);
     void setColor(sf::Color col);
     float dotProduct(sf::Vector2f u1, sf::Vector2f u2);
     void turnBackTime(float time);

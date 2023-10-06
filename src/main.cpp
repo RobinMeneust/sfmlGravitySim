@@ -52,7 +52,7 @@ int main()
 
     for (int i = 0; i < nbParticles; i++) {
         particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), -0.3, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox, std::to_string(i)));
-        // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i), std::to_string(i));
+        // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i, std::to_string(i)));
 
         float val = (float)i / (float)nbParticles;
         sf::Color col = mapValToColor(val);
@@ -95,7 +95,7 @@ int main()
         for (int i = 0; i < particles.size(); i++) {
             for (int j = 0; j < particles.size(); j++) {
                 if(i!=j) {
-                    float collisionTime = particles[i].collisionUpdate(particles[j]);
+                    float collisionTime = particles[i].collisionUpdate(&(particles[j]));
                     if(collisionTime != -1.0f) {
                         // There is a collision
                         for (int k = 0; k < particles.size(); k++) {
