@@ -26,15 +26,12 @@ public:
     void render(sf::RenderWindow& window);
     sf::Vector2f getPos();
     void updateAcceleration(GravitySource& src);
-    void updatePhysics(float framePercentage);
-    void updatePhysics();
     void collideBorder();
     float findBorderCollisionTime(sf::Vector2f prevPos, sf::Vector2f pos, float radius, bool isHorizontal, float coord);
     float getNextBorderCollisionTime();
     float distanceTo(Particle p2);
     static float distance(float r1, float r2, sf::Vector2f pos1, sf::Vector2f pos2);
     float findCollisionTime(sf::Vector2f prevPos1, sf::Vector2f prevPos2, sf::Vector2f pos1, sf::Vector2f pos2, float r1, float r2);
-    float collisionUpdate(Particle *p2);
     float getNextParticleCollisionTime(Particle* p2);
     void collideParticle(Particle* p2);
     void setColor(sf::Color col);

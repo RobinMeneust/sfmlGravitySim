@@ -35,7 +35,7 @@ sf::Color mapValToColor(float value) {
 
 int main()
 {
-    sf::Vector2i windowRes(200, 200);
+    sf::Vector2i windowRes(80, 80);
     // sf::Vector2i windowRes(1600, 800);
     sf::RenderWindow window(sf::VideoMode(windowRes.x, windowRes.y), "My Program");
     window.setFramerateLimit(60);
@@ -45,14 +45,24 @@ int main()
     // sources.push_back(GravitySource(500, 500, 3000));
     // sources.push_back(GravitySource(1200, 500, 7000));
 
-    int nbParticles = 5;
+    int nbParticles = 4;
 
     std::vector<Particle> particles;
 
     sf::Rect<float> windowBoundingBox(sf::Vector2f(0.0f, 0.0f), sf::Vector2f(windowRes.x, windowRes.y));
 
+    int x = 0;
+    int y = 30;
+
     for (int i = 0; i < nbParticles; i++) {
-        particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), -0.3, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox, std::to_string(i)));
+        x += 30;
+        if(x+15>windowRes.x) {
+            x = 30;
+            y += 30;
+        }
+
+        particles.push_back(Particle(x, y, -0.3, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox, std::to_string(i)));
+        std::cout << "X Y " << x << " " << y << " : " << i << std::endl;
         // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i, std::to_string(i)));
 
         float val = (float)i / (float)nbParticles;
@@ -60,6 +70,8 @@ int main()
 
         particles[i].setColor(col);
     }
+
+    float remainingFrameTime = 1.0f;
 
 
     while (window.isOpen()) {
@@ -70,7 +82,7 @@ int main()
         float firstCollisionTime = INFINITY;
         Particle* particlesColliding[2] = {NULL,NULL};
         bool isBorderCollision = false;
-        float remainingFrameTime = 1.0f;
+        
 
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) window.close();
@@ -88,6 +100,7 @@ int main()
         std::cout << "UPDATED ACCELERATION VECTORS" << std::endl;
         // Check if there are collisions between a particle and a border
         for (int i = 0; i < particles.size(); i++) {
+            std::cout << "TEST :" << particles[i].getName() << " : " << particles[i].getPos().x << " " << particles[i].getPos().y << std::endl;
             float collisionTime = particles[i].getNextBorderCollisionTime();
             if(collisionTime != -1.0f && collisionTime < firstCollisionTime) {
                 // There is a collision
@@ -118,9 +131,12 @@ int main()
         std::cout << "CHECKED PARTICLES COLLISION" << std::endl;
         
         if(firstCollisionTime >= 0.0f && firstCollisionTime <= 1.0f) {
-            for(int i=0; i<particles.size(); i++) {
-                // Go to the collision time
-                particles[i].forwardTime(firstCollisionTime);
+            std::cout << "remainingFrameTime: " << remainingFrameTime << " firstCollisionTime: " << firstCollisionTime << std::endl;
+            if(firstCollisionTime != 0.0f) {
+                for(int i=0; i<particles.size(); i++) {
+                    // Go to the collision time
+                    particles[i].forwardTime(std::min(firstCollisionTime,remainingFrameTime));
+                }
             }
 
             if(isBorderCollision) {
@@ -128,23 +144,30 @@ int main()
             } else {
                 particlesColliding[0]->collideParticle(particlesColliding[1]);
             }
+
+            remainingFrameTime = std::max(remainingFrameTime - firstCollisionTime,0.0f);
         } else {
             for(int i=0; i<particles.size(); i++) {
-                particles[i].forwardTime(1.0f);
+                particles[i].forwardTime(remainingFrameTime);
             }
+            remainingFrameTime = 0.0f;
         }
 
-        // Render the particles
-        for (int i = 0; i < particles.size(); i++) {
-            particles[i].render(window);
-        }
+        if(remainingFrameTime <= 0) {
+            remainingFrameTime = 1.0f;
+            // Render the particles
+            for (int i = 0; i < particles.size(); i++) {
+                particles[i].render(window);
+            }
 
-        // Render the gravity sources
-        for (int i = 0; i < sources.size(); i++) {
-            sources[i].render(window);
+            // Render the gravity sources
+            for (int i = 0; i < sources.size(); i++) {
+                sources[i].render(window);
+            }
+            window.display();
+            std::cout << "________________RENDER________________" <<std::endl;
+            std::cout << "______________________________________" <<std::endl;
         }
-
-        window.display();
     }
     return 0;
 }
