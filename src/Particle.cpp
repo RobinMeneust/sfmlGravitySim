@@ -67,10 +67,14 @@ void Particle::updateAcceleration(GravitySource& src) {
 
 void Particle::updatePhysics() {
     pos += velocity;
-    std::cout << "VELOCITY: p: (" << name << ") " << velocity.x << " " << velocity.y << std::endl;
+}
+
+void Particle::updatePhysics(float framePercentage) {
+    pos += velocity * framePercentage;
 }
 
 float Particle::findBorderCollisionTime(sf::Vector2f prevPos, sf::Vector2f pos, float radius, bool isHorizontal, float coord) {
+    std::cout << "root border search for nb " << name << std::endl;
     float c1;
     float c2;
     if(isHorizontal) {
@@ -121,42 +125,44 @@ float Particle::findBorderCollisionTime(sf::Vector2f prevPos, sf::Vector2f pos, 
     } else if(t2 >=0 && t2 <=1) {
         t = t2;
     } else {
-        std::cerr << "(border collision) Root could not be found" << std::endl;
+        std::cerr << "(border collision) Root could not be found for nb " << name << std::endl;
         exit(EXIT_FAILURE);
     }
 
     return t;
 }
 
-float Particle::bordersCollisionUpdate() {
-    float collisionTime = -1.0f;
+void Particle::collideBorder() {
+    if (pos.x - radius <= boundingBox.left || pos.x + radius >= boundingBox.left + boundingBox.width) {
+        velocity.x = -velocity.x;
+    }
+    if (pos.y - radius <= boundingBox.top || pos.y + radius >= boundingBox.top + boundingBox.height) {
+        velocity.y = -velocity.y;
+    }
+}
+
+float Particle::getNextBorderCollisionTime() {
+    if(name == "7") {
+        std::cout << "pos7 = " << pos.x << " " << pos.y << std::endl;
+    }
     if(boundingBox.width != 0 && boundingBox.height !=0) {
         // If there is a bounding box
         sf::Vector2f nextStepPos = pos + velocity;
 
         if (nextStepPos.x - radius <= boundingBox.left) {
-            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.left);
-            turnBackTime(collisionTime);
-            velocity.x = -velocity.x;
+            return findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.left);
         }        
         if(nextStepPos.x + radius >= boundingBox.left + boundingBox.width) {
-            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.left + boundingBox.width);
-            turnBackTime(collisionTime);
-            velocity.x = -velocity.x;
+            return findBorderCollisionTime(pos,nextStepPos, radius,false, boundingBox.left + boundingBox.width);
         }
         if (nextStepPos.y - radius <= boundingBox.top) {
-            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,true, boundingBox.top);
-            turnBackTime(collisionTime);
-            velocity.y = -velocity.y;
+            return findBorderCollisionTime(pos,nextStepPos, radius,true, boundingBox.top);
         }
         if (nextStepPos.y + radius >= boundingBox.top + boundingBox.height) {
-            collisionTime = findBorderCollisionTime(pos,nextStepPos, radius,true, boundingBox.top + boundingBox.height);
-            turnBackTime(collisionTime);
-            velocity.y = -velocity.y;
+            return findBorderCollisionTime(pos,nextStepPos, radius,true, boundingBox.top + boundingBox.height);
         }
-
     }
-    return collisionTime;
+    return -1.0f;
 }
 
 float Particle::distanceTo(Particle p2) {
@@ -224,7 +230,25 @@ float Particle::findCollisionTime(sf::Vector2f prevPos1, sf::Vector2f prevPos2, 
     return t;
 }
 
-float Particle::collisionUpdate(Particle *p2) {
+void Particle::collideParticle(Particle* p2) {
+    std::cout << "collide particle" << std::endl;
+
+    sf::Vector2f nextPosP1 = pos + velocity;
+    sf::Vector2f nextPosP2 = p2->pos + p2->velocity;
+    float invMassSum = 1/(mass + p2->mass);
+    float dOrientation = dotProduct(velocity - p2->velocity, pos - p2->pos) / ((pos.x-p2->pos.x)*(pos.x-p2->pos.x) + (pos.y-p2->pos.y)*(pos.y-p2->pos.y));
+    float dist = distance(radius, p2->radius, nextPosP1, nextPosP2);
+
+    if(dist <= 0.001) {
+        // <-u1,-u2> = <u1,u2>
+        std::cout << "PREV VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
+        velocity -= 2*p2->mass * invMassSum * dOrientation * (pos - p2->pos);
+        p2->velocity -= 2*mass * invMassSum * dOrientation * (p2->pos - pos);
+        std::cout << "PREV VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
+    }
+}
+
+float Particle::getNextParticleCollisionTime(Particle* p2) {
     sf::Vector2f nextPosP1 = pos + velocity;
     sf::Vector2f nextPosP2 = p2->pos + p2->velocity;
     float dist = distance(radius, p2->radius, nextPosP1, nextPosP2);
@@ -232,25 +256,27 @@ float Particle::collisionUpdate(Particle *p2) {
 
     if(dist <= 0.001) {
         // collision (and eventually overlap)    
-        collisionTime = findCollisionTime(pos, p2->pos, nextPosP1, nextPosP2, radius, p2->radius);
-        this->turnBackTime(collisionTime);
-        p2->turnBackTime(collisionTime);
-
-        float invMassSum = 1/(mass + p2->mass);
-        float dOrientation = dotProduct(velocity - p2->velocity, pos - p2->pos) / ((pos.x-p2->pos.x)*(pos.x-p2->pos.x) + (pos.y-p2->pos.y)*(pos.y-p2->pos.y));
-
-        // <-u1,-u2> = <u1,u2>
-        std::cout << "PREV VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
-        velocity -= 2*p2->mass * invMassSum * dOrientation * (pos - p2->pos);
-        p2->velocity -= 2*mass * invMassSum * dOrientation * (p2->pos - pos);
-        std::cout << "PREV VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
+        std::cout << "COLLISION BETWEEN " << name << " & " << p2->name << std::endl;
+        return findCollisionTime(pos, p2->pos, nextPosP1, nextPosP2, radius, p2->radius);
     }
 
     return collisionTime;
 }
 
-void Particle::turnBackTime(float time) {
-    std::cout << "turn back time "<< time << std::endl;
+/* TODO: We should :
+- Put in a temp var the next step position
+- Check if there is a collision
+
+1. If there is a collision :
+- Go to the collision point (function below) = UPDATE POSITION
+- Update velocity (for the next step of the main loop)
+
+2. If there is no collision :
+- Update position (pos2 = pos next step)
+
+*/
+void Particle::forwardTime(float time) {
+    std::cout << "next step "<< time << std::endl;
     sf::Vector2f nextStepPos = pos + velocity;
     pos = pos + time*(nextStepPos - pos);
 }

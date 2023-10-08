@@ -35,16 +35,17 @@ sf::Color mapValToColor(float value) {
 
 int main()
 {
-    sf::Vector2i windowRes(1600, 800);
+    sf::Vector2i windowRes(200, 200);
+    // sf::Vector2i windowRes(1600, 800);
     sf::RenderWindow window(sf::VideoMode(windowRes.x, windowRes.y), "My Program");
     window.setFramerateLimit(60);
 
     std::vector<GravitySource> sources;
 
     // sources.push_back(GravitySource(500, 500, 3000));
-    // sources.push_back(GravitySource(1200, 500, 3000));
+    // sources.push_back(GravitySource(1200, 500, 7000));
 
-    int nbParticles = 10;
+    int nbParticles = 5;
 
     std::vector<Particle> particles;
 
@@ -64,6 +65,13 @@ int main()
     while (window.isOpen()) {
         std::cout << "________________step________________" <<std::endl;
         sf::Event event;
+        
+        sf::Vector2f collisionParticles;
+        float firstCollisionTime = INFINITY;
+        Particle* particlesColliding[2] = {NULL,NULL};
+        bool isBorderCollision = false;
+        float remainingFrameTime = 1.0f;
+
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) window.close();
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
@@ -77,40 +85,57 @@ int main()
                 particles[i].updateAcceleration(sources[j]);
             }
         }
-
-        // Check if there are collisions a particle and a border
+        std::cout << "UPDATED ACCELERATION VECTORS" << std::endl;
+        // Check if there are collisions between a particle and a border
         for (int i = 0; i < particles.size(); i++) {
-            float collisionTime = particles[i].bordersCollisionUpdate();
-            if(collisionTime != -1.0f) {
+            float collisionTime = particles[i].getNextBorderCollisionTime();
+            if(collisionTime != -1.0f && collisionTime < firstCollisionTime) {
                 // There is a collision
-                for (int k = 0; k < particles.size(); k++) {
-                    if(k != i) {
-                        particles[i].turnBackTime(collisionTime);
-                    }
-                }
+                isBorderCollision = true;
+                firstCollisionTime = collisionTime;
+                particlesColliding[0] = &(particles[i]);
             }
         }
+
+        std::cout << "CHECKED BORDERS COLLISION" << std::endl;
 
         // Check if there are collisions between two particles
         for (int i = 0; i < particles.size(); i++) {
             for (int j = 0; j < particles.size(); j++) {
                 if(i!=j) {
-                    float collisionTime = particles[i].collisionUpdate(&(particles[j]));
-                    if(collisionTime != -1.0f) {
+                    float collisionTime = particles[i].getNextParticleCollisionTime(&(particles[j]));
+                    if(collisionTime != -1.0f && collisionTime < firstCollisionTime) {
                         // There is a collision
-                        for (int k = 0; k < particles.size(); k++) {
-                            if(k != i && k != j) {
-                                particles[i].turnBackTime(collisionTime);
-                            }
-                        }
+                        isBorderCollision = false;
+                        firstCollisionTime = collisionTime;
+                        particlesColliding[0] = &(particles[i]);
+                        particlesColliding[1] = &(particles[j]);
                     }
                 }
             }
         }
 
-        // Update positions and render the particles
+        std::cout << "CHECKED PARTICLES COLLISION" << std::endl;
+        
+        if(firstCollisionTime >= 0.0f && firstCollisionTime <= 1.0f) {
+            for(int i=0; i<particles.size(); i++) {
+                // Go to the collision time
+                particles[i].forwardTime(firstCollisionTime);
+            }
+
+            if(isBorderCollision) {
+                particlesColliding[0]->collideBorder();
+            } else {
+                particlesColliding[0]->collideParticle(particlesColliding[1]);
+            }
+        } else {
+            for(int i=0; i<particles.size(); i++) {
+                particles[i].forwardTime(1.0f);
+            }
+        }
+
+        // Render the particles
         for (int i = 0; i < particles.size(); i++) {
-            particles[i].updatePhysics();
             particles[i].render(window);
         }
 
