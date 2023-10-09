@@ -15,7 +15,9 @@ Particle::Particle(float posX, float posY, float velX, float velY, sf::Rect<floa
 
     //TO DO: use a relative path
 
-    std::cout << (font.loadFromFile(FONTDIR "Calibri.ttf") ? "success" : "failure") << std::endl;
+    if(!font.loadFromFile(FONTDIR "Calibri.ttf")) {
+        std::cerr << "Font could not be loaded" << std::endl;
+    }
     nameTextBox.setFont(font);
     nameTextBox.setString(name);
     // nameTextBox.setCharacterSize(10);
@@ -67,7 +69,6 @@ void Particle::updateAcceleration(GravitySource& src) {
 
 
 float Particle::findBorderCollisionTime(sf::Vector2f prevPos, sf::Vector2f pos, float radius, bool isHorizontal, float coord) {
-    std::cout << "root border search for nb " << name << std::endl;
     float c1;
     float c2;
     if(isHorizontal) {
@@ -101,13 +102,13 @@ float Particle::findBorderCollisionTime(sf::Vector2f prevPos, sf::Vector2f pos, 
         t2 = (-b+sqrt(delta))/(2*a);
     }
 
-    std::cout << "PREV: p: " << prevPos.x << " " << prevPos.y << std::endl;
-    std::cout << "NEXT: p: " << pos.x << " " << pos.y << std::endl;
-    std::cout << "isBorderHorizontal: " << (isHorizontal ? "true" : "false") << std::endl;
-    std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
-    std::cout << "b^2: " << b*b << " 4ac: " << 4*a*c << std::endl;
-    std::cout << "delta: " << delta << std::endl;
-    std::cout << "t1: " << t1 << " t2: " << t2 << std::endl;
+    // std::cout << "PREV: p: " << prevPos.x << " " << prevPos.y << std::endl;
+    // std::cout << "NEXT: p: " << pos.x << " " << pos.y << std::endl;
+    // std::cout << "isBorderHorizontal: " << (isHorizontal ? "true" : "false") << std::endl;
+    // std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
+    // std::cout << "b^2: " << b*b << " 4ac: " << 4*a*c << std::endl;
+    // std::cout << "delta: " << delta << std::endl;
+    // std::cout << "t1: " << t1 << " t2: " << t2 << std::endl;
 
     if(t1 >=0 && t1 <=1) {
         if(t1 < t2 || t2<0 || t2>1) {
@@ -135,9 +136,6 @@ void Particle::collideBorder() {
 }
 
 float Particle::getNextBorderCollisionTime() {
-    if(name == "7") {
-        std::cout << "pos7 = " << pos.x << " " << pos.y << std::endl;
-    }
     if(boundingBox.width != 0 && boundingBox.height !=0) {
         // If there is a bounding box
         sf::Vector2f nextStepPos = pos + velocity;
@@ -200,12 +198,12 @@ float Particle::findCollisionTime(sf::Vector2f prevPos1, sf::Vector2f prevPos2, 
         t2 = (-b+sqrt(delta))/(2*a);
     }
 
-    std::cout << "PREV: p1: " << prevPos1.x << " " << prevPos1.y << " p2: " << prevPos2.x << " " << prevPos2.y << std::endl;
-    std::cout << "NEXT: p1: " << pos1.x << " " << pos1.y << " p2: " << pos2.x << " " << pos2.y << std::endl;
-    std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
-    std::cout << "b^2: " << b*b << " 4ac: " << 4*a*c << std::endl;
-    std::cout << "delta: " << delta << std::endl;
-    std::cout << "t1: " << t1 << " t2: " << t2 << std::endl;
+    // std::cout << "PREV: p1: " << prevPos1.x << " " << prevPos1.y << " p2: " << prevPos2.x << " " << prevPos2.y << std::endl;
+    // std::cout << "NEXT: p1: " << pos1.x << " " << pos1.y << " p2: " << pos2.x << " " << pos2.y << std::endl;
+    // std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
+    // std::cout << "b^2: " << b*b << " 4ac: " << 4*a*c << std::endl;
+    // std::cout << "delta: " << delta << std::endl;
+    // std::cout << "t1: " << t1 << " t2: " << t2 << std::endl;
 
     if(t1 >=0 && t1 <=1) {
         if(t1 < t2 || t2<0 || t2>1) {
@@ -227,12 +225,10 @@ void Particle::collideParticle(Particle* p2) {
     float invMassSum = 1/(mass + p2->mass);
     float dOrientation = dotProduct(velocity - p2->velocity, pos - p2->pos) / ((pos.x-p2->pos.x)*(pos.x-p2->pos.x) + (pos.y-p2->pos.y)*(pos.y-p2->pos.y));
 
-    std::cout << "collide particle" << std::endl;
     // <-u1,-u2> = <u1,u2>
-    std::cout << "PREV VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
+    // std::cout << "PREV VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
     velocity -= 2*p2->mass * invMassSum * dOrientation * (pos - p2->pos);
     p2->velocity -= 2*mass * invMassSum * dOrientation * (p2->pos - pos);
-    std::cout << "NEW VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
 }
 
 float Particle::getNextParticleCollisionTime(Particle* p2) {
@@ -242,9 +238,9 @@ float Particle::getNextParticleCollisionTime(Particle* p2) {
     float collisionTime = -1.0f;
 
     if(dist <= 0) {
-        std::cout << "VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
         // collision (and eventually overlap)    
-        std::cout << "COLLISION BETWEEN " << name << " & " << p2->name << std::endl;
+        // std::cout << "VELOCITY: p1: (" << name << ") " << velocity.x << " " << velocity.y << " p2: (" << p2->name << ") " << p2->velocity.x << " " << p2->velocity.y << std::endl;
+        // std::cout << "COLLISION BETWEEN " << name << " & " << p2->name << std::endl;
         return findCollisionTime(pos, p2->pos, nextPosP1, nextPosP2, radius, p2->radius);
     }
 
@@ -252,7 +248,6 @@ float Particle::getNextParticleCollisionTime(Particle* p2) {
 }
 
 void Particle::forwardTime(float time) {
-    std::cout << "next step "<< time << std::endl;
     pos += time*velocity;
 }
 
@@ -261,7 +256,7 @@ void Particle::setColor(sf::Color col) {
 }
 
 float Particle::dotProduct(sf::Vector2f u1, sf::Vector2f u2) {
-    return u1.x * u2.x + u1.y + u2.y;
+    return u1.x * u2.x + u1.y * u2.y;
 }
 
 std::string Particle::getName() {

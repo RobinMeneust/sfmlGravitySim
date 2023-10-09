@@ -35,7 +35,7 @@ sf::Color mapValToColor(float value) {
 
 int main()
 {
-    sf::Vector2i windowRes(80, 80);
+    sf::Vector2i windowRes(200, 200);
     // sf::Vector2i windowRes(1600, 800);
     sf::RenderWindow window(sf::VideoMode(windowRes.x, windowRes.y), "My Program");
     window.setFramerateLimit(60);
@@ -45,7 +45,7 @@ int main()
     // sources.push_back(GravitySource(500, 500, 3000));
     // sources.push_back(GravitySource(1200, 500, 7000));
 
-    int nbParticles = 4;
+    int nbParticles = 20;
 
     std::vector<Particle> particles;
 
@@ -62,7 +62,6 @@ int main()
         }
 
         particles.push_back(Particle(x, y, -0.3, 0.2 + (0.1 / nbParticles) * i, windowBoundingBox, std::to_string(i)));
-        std::cout << "X Y " << x << " " << y << " : " << i << std::endl;
         // particles.push_back(Particle(30 + i*30 % (windowRes.x-60), 30 + 10*(i*30 / (windowRes.y-60)), 2, 0.2 + (0.1 / nbParticles) * i, std::to_string(i)));
 
         float val = (float)i / (float)nbParticles;
@@ -100,7 +99,6 @@ int main()
         std::cout << "UPDATED ACCELERATION VECTORS" << std::endl;
         // Check if there are collisions between a particle and a border
         for (int i = 0; i < particles.size(); i++) {
-            std::cout << "TEST :" << particles[i].getName() << " : " << particles[i].getPos().x << " " << particles[i].getPos().y << std::endl;
             float collisionTime = particles[i].getNextBorderCollisionTime();
             if(collisionTime != -1.0f && collisionTime < firstCollisionTime) {
                 // There is a collision
@@ -131,7 +129,6 @@ int main()
         std::cout << "CHECKED PARTICLES COLLISION" << std::endl;
         
         if(firstCollisionTime >= 0.0f && firstCollisionTime <= 1.0f) {
-            std::cout << "remainingFrameTime: " << remainingFrameTime << " firstCollisionTime: " << firstCollisionTime << std::endl;
             if(firstCollisionTime != 0.0f) {
                 for(int i=0; i<particles.size(); i++) {
                     // Go to the collision time
