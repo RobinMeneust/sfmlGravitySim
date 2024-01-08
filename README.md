@@ -17,3 +17,7 @@ Some bugs (crashes) are still not fixed in this version.
 - `cmake -S . -B build-debug -DCMAKE_BUILD_TYPE=Debug`
 - `cmake --build build-debug`
 - `gdb build-debug/simple_example`
+
+## Help
+
+[PDF](collision_detection.pdf)
