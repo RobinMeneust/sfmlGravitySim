@@ -1,3 +1,11 @@
+# SFML Gravity Simulator
+
+## About
+
+Small project to learn how to use SFML.
+Simulate particules collision and use continuous collision.
+Some bugs (crashes) are still not fixed in this version.
+
 ## Install dependencies
 `cmake -S . -B build`
 
